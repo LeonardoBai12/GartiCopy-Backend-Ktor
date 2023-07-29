@@ -6,7 +6,7 @@ val logbackVersion: String by project
 plugins {
     kotlin("jvm") version "1.9.0"
     id("io.ktor.plugin") version "2.3.2"
-    kotlin("plugin.ktlint") version "11.1.0"
+    id("org.jlleitschuh.gradle.ktlint") version "11.1.0"
 }
 
 group = "io.lb"
