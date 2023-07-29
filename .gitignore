@@ -36,3 +36,4 @@ build/reports/ktlint/ktlintKotlinScriptCheck/ktlintKotlinScriptCheck.txt
 .gradle/8.0/executionHistory/executionHistory.bin
 .gradle/8.0/checksums/sha1-checksums.bin
 .gradle/8.0/checksums/checksums.lock
+*.lock
