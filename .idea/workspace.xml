@@ -69,7 +69,7 @@
     &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;
   }
 }</component>
-  <component name="RunManager" selected="Gradle.Frozen-Ape [wrapper]">
+  <component name="RunManager" selected="Gradle.Frozen-Ape [init]">
     <configuration name="Frozen-Ape [assemble]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -103,6 +103,27 @@
         <option name="taskNames">
           <list>
             <option value="buildFatJar" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="Frozen-Ape [init]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="init" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -148,6 +169,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.Frozen-Ape [init]" />
         <item itemvalue="Gradle.Frozen-Ape [wrapper]" />
         <item itemvalue="Gradle.Frozen-Ape [buildFatJar]" />
         <item itemvalue="Gradle.Frozen-Ape [assemble]" />
