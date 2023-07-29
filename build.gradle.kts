@@ -6,10 +6,11 @@ val logbackVersion: String by project
 plugins {
     kotlin("jvm") version "1.9.0"
     id("io.ktor.plugin") version "2.3.2"
+    kotlin("plugin.ktlint") version "11.1.0"
 }
 
-group = "com.example"
-version = "0.0.1"
+group = "io.lb"
+version = "1.0.0"
 
 application {
     mainClass.set("io.lb.ApplicationKt")
