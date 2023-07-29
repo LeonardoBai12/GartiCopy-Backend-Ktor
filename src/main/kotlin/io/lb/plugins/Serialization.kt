@@ -1,13 +1,7 @@
 package io.lb.plugins
 
-import io.ktor.server.application.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.server.application.Application
 
 fun Application.configureSerialization() {
-    routing {
-        get("/json/gson") {
-                call.respond(mapOf("hello" to "world"))
-            }
-    }
+
 }
