@@ -1,1 +1,1 @@
-rootProject.name = "com.example.doddie-kong"
+rootProject.name = "io.lb.frozen-ape"
