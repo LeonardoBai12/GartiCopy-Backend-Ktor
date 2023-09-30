@@ -3,6 +3,7 @@ package io.lb.data
 import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
 import io.lb.data.models.Announcement
+import io.lb.data.models.ChosenWord
 import io.lb.data.models.PhaseChange
 import io.lb.gson
 import io.lb.util.Constants
@@ -21,6 +22,8 @@ class Room(
 ) {
     private var timerJob: Job? = null
     private var drawingPlayer: Player? = null
+    private var winningPlayers = listOf<String>()
+    private var word: String? = null
 
     init {
         setPhaseChangedListener { newPhase ->
@@ -126,6 +129,11 @@ class Room(
         return players.find { it.userName == userName } != null
     }
 
+    fun setWordAndSwitchToGameRunning(word: String) {
+        this.word = word
+        phase = Phase.GAME_RUNNING
+    }
+
     private fun waitingForPlayers() {
         GlobalScope.launch {
             val phaseChange = PhaseChange(
@@ -138,12 +146,7 @@ class Room(
 
     private fun waitingForStart() {
         GlobalScope.launch {
-            timeAndNotify(Phase.WAITING_FOR_START.delay)
-            val phaseChange = PhaseChange(
-                Phase.WAITING_FOR_START,
-                Phase.WAITING_FOR_START.delay
-            )
-            broadcast(gson.toJson(phaseChange))
+            notifyPhaseChange(Phase.WAITING_FOR_START)
         }
     }
 
@@ -156,7 +159,24 @@ class Room(
     }
 
     private fun showWord() {
+        GlobalScope.launch {
+            if (winningPlayers.isEmpty()) {
+                drawingPlayer?.let {
+                    it.score -= PENALTY_NOBODY_GUESSED_IT
+                }
+            }
+            word?.let {
+                val chosenWord = ChosenWord(it, name)
+                broadcast(gson.toJson(chosenWord))
+            }
+            notifyPhaseChange(Phase.SHOW_WORD)
+        }
+    }
 
+    private suspend fun notifyPhaseChange(phase: Phase) {
+        timeAndNotify(phase.delay)
+        val phaseChange = PhaseChange(phase, phase.delay)
+        broadcast(gson.toJson(phaseChange))
     }
 
     enum class Phase(val delay: Long) {
@@ -169,5 +189,7 @@ class Room(
 
     companion object {
         const val UPDATE_TIME_FREQUENCY = 1000L
+
+        const val PENALTY_NOBODY_GUESSED_IT = 50
     }
 }

@@ -16,6 +16,7 @@ import io.lb.data.Room
 import io.lb.data.models.Announcement
 import io.lb.data.models.BaseModel
 import io.lb.data.models.ChatMessage
+import io.lb.data.models.ChosenWord
 import io.lb.data.models.DrawData
 import io.lb.data.models.GameError
 import io.lb.data.models.JoinRoomHandshake
@@ -25,8 +26,10 @@ import io.lb.server
 import io.lb.session.DrawingSession
 import io.lb.util.Constants
 import java.lang.Exception
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.consumeEach
 
+@DelicateCoroutinesApi
 fun Route.gameWebSocketRoute() {
     route(Constants.ROUTE_GAME_SOCKET) {
         standardWebSocket { socket, clientId, message, payload ->
@@ -57,6 +60,10 @@ fun Route.gameWebSocketRoute() {
                     if (room.phase == Room.Phase.GAME_RUNNING) {
                         room.broadcastToAllExcept(message, clientId)
                     }
+                }
+                is ChosenWord -> {
+                    val room = server.rooms[payload.roomName] ?: return@standardWebSocket
+                    room.setWordAndSwitchToGameRunning(payload.chosenWord)
                 }
                 is ChatMessage -> {
 
@@ -93,6 +100,7 @@ fun Route.standardWebSocket(
                         BaseModel.Type.ANNOUNCEMENT.name -> Announcement::class.java
                         BaseModel.Type.JOIN_ROOM_HANDSHAKE.name -> JoinRoomHandshake::class.java
                         BaseModel.Type.PHASE_CHANGE.name -> PhaseChange::class.java
+                        BaseModel.Type.CHOSEN_WORD.name -> ChosenWord::class.java
                         else -> BaseModel::class.java
                     }
                     val payload = gson.fromJson(message, type)
