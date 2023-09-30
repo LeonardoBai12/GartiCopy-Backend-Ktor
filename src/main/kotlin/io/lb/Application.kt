@@ -1,5 +1,6 @@
 package io.lb
 
+import com.google.gson.Gson
 import io.ktor.serialization.gson.gson
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCallPipeline
@@ -18,12 +19,15 @@ import io.ktor.server.sessions.set
 import io.ktor.server.websocket.WebSockets
 import io.ktor.util.generateNonce
 import io.lb.routes.createRoomRoute
+import io.lb.routes.getRoomsRoute
+import io.lb.routes.joinRoomRoute
 import io.lb.session.DrawingServer
 import io.lb.session.DrawingSession
 
 private const val SESSION_NAME = "SESSIONS"
 private const val CLIENT_ID = "client_id"
 val server = DrawingServer()
+val gson = Gson()
 
 fun main() {
     embeddedServer(
@@ -53,6 +57,8 @@ fun Application.module() {
 
     install(Routing) {
         createRoomRoute()
+        getRoomsRoute()
+        joinRoomRoute()
     }
 
     install(ContentNegotiation) {

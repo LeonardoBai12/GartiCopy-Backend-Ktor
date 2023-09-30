@@ -16,7 +16,7 @@ import io.lb.server
 import io.lb.util.Constants
 
 fun Route.createRoomRoute() {
-    route(Constants.CREATE_ROOM_ROUTE) {
+    route(Constants.ROUTE_CREATE_ROOM) {
         post {
             val roomRequest = call.receiveNullable<CreateRoomRequest>()
 
@@ -70,8 +70,8 @@ fun Route.createRoomRoute() {
     }
 }
 
-fun Route.getRooms() {
-    route(Constants.GET_ROOMS_ROUTE) {
+fun Route.getRoomsRoute() {
+    route(Constants.ROUTE_GET_ROOMS) {
         get {
             val searchQuery = call.parameters[Constants.PARAMETER_SEARCH_QUERY]
 
@@ -89,6 +89,58 @@ fun Route.getRooms() {
             }.sortedBy { it.name }
 
             call.respond(HttpStatusCode.OK, roomResponse)
+        }
+    }
+}
+
+fun Route.joinRoomRoute() {
+    route(Constants.ROUTE_JOIN_ROOM) {
+        get {
+            val userName = call.parameters[Constants.PARAMETER_USER_NAME]
+            val roomName = call.parameters[Constants.PARAMETER_ROOM_NAME]
+
+            if (userName == null || roomName == null) {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+
+            val room = server.rooms[roomName]
+
+            when {
+                room == null -> {
+                    call.respond(
+                        HttpStatusCode.OK,
+                        BasicApiResponse(
+                            false,
+                            "Room not found."
+                        )
+                    )
+                }
+
+                room.containsPlayers(userName) -> {
+                    call.respond(
+                        HttpStatusCode.OK,
+                        BasicApiResponse(
+                            false,
+                            "A player with this user name already joined."
+                        )
+                    )
+                }
+
+                room.players.size > Constants.MAX_ROOM_SIZE -> {
+                    call.respond(
+                        HttpStatusCode.OK,
+                        BasicApiResponse(
+                            false,
+                            "This room is already full."
+                        )
+                    )
+                }
+
+                else -> {
+                    call.respond(HttpStatusCode.OK, BasicApiResponse(true))
+                }
+            }
         }
     }
 }
