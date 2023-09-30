@@ -9,6 +9,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.callloging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.routing.Routing
 import io.ktor.server.sessions.Sessions
 import io.ktor.server.sessions.cookie
 import io.ktor.server.sessions.get
@@ -16,15 +17,18 @@ import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.server.websocket.WebSockets
 import io.ktor.util.generateNonce
+import io.lb.routes.createRoomRoute
+import io.lb.session.DrawingServer
 import io.lb.session.DrawingSession
 
 private const val SESSION_NAME = "SESSIONS"
 private const val CLIENT_ID = "client_id"
+val server = DrawingServer()
 
 fun main() {
     embeddedServer(
         factory = Netty,
-        port = 8080,
+        port = 8001,
         host = "0.0.0.0",
         module = Application::module
     ).start(wait = true)
@@ -45,6 +49,10 @@ fun Application.module() {
                 )
             )
         }
+    }
+
+    install(Routing) {
+        createRoomRoute()
     }
 
     install(ContentNegotiation) {
