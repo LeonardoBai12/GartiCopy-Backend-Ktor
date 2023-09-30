@@ -43,6 +43,13 @@ fun Application.module() {
     install(Sessions) {
         cookie<DrawingSession>(SESSION_NAME)
     }
+    install(ContentNegotiation) {
+        gson {
+
+        }
+    }
+    install(CallLogging)
+    install(WebSockets)
 
     intercept(ApplicationCallPipeline.Plugins) {
         call.sessions.get<DrawingSession>() ?: {
@@ -62,12 +69,4 @@ fun Application.module() {
         joinRoomRoute()
         gameWebSocketRoute()
     }
-
-    install(ContentNegotiation) {
-        gson {
-
-        }
-    }
-    install(CallLogging)
-    install(WebSockets)
 }

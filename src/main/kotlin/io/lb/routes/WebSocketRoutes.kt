@@ -19,6 +19,7 @@ import io.lb.data.models.ChatMessage
 import io.lb.data.models.DrawData
 import io.lb.data.models.GameError
 import io.lb.data.models.JoinRoomHandshake
+import io.lb.data.models.PhaseChange
 import io.lb.gson
 import io.lb.server
 import io.lb.session.DrawingSession
@@ -87,10 +88,11 @@ fun Route.standardWebSocket(
                     val message = frame.readText()
                     val jsonObject = JsonParser.parseString(message).asJsonObject
                     val type = when (jsonObject.get(Constants.TYPE).asString) {
-                        Constants.TYPE_CHAT_MESSAGE -> ChatMessage::class.java
-                        Constants.TYPE_DRAW_DATA -> DrawData::class.java
-                        Constants.TYPE_ANNOUNCEMENT -> Announcement::class.java
-                        Constants.TYPE_JOIN_ROOM_HANDSHAKE -> JoinRoomHandshake::class.java
+                        BaseModel.Type.CHAT_MESSAGE.name -> ChatMessage::class.java
+                        BaseModel.Type.DRAW_DATA.name -> DrawData::class.java
+                        BaseModel.Type.ANNOUNCEMENT.name -> Announcement::class.java
+                        BaseModel.Type.JOIN_ROOM_HANDSHAKE.name -> JoinRoomHandshake::class.java
+                        BaseModel.Type.PHASE_CHANGE.name -> PhaseChange::class.java
                         else -> BaseModel::class.java
                     }
                     val payload = gson.fromJson(message, type)

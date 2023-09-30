@@ -1,7 +1,5 @@
 package io.lb.data.models
 
-import io.lb.util.Constants
-
 data class DrawData(
     val roomName: String,
     val color: Int,
@@ -11,4 +9,4 @@ data class DrawData(
     val toX: Float,
     val toY: Float,
     val motionEvent: Int,
-) : BaseModel(Constants.TYPE_DRAW_DATA)
+) : BaseModel(Type.DRAW_DATA)
