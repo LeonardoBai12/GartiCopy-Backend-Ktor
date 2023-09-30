@@ -19,6 +19,7 @@ import io.ktor.server.sessions.set
 import io.ktor.server.websocket.WebSockets
 import io.ktor.util.generateNonce
 import io.lb.routes.createRoomRoute
+import io.lb.routes.gameWebSocketRoute
 import io.lb.routes.getRoomsRoute
 import io.lb.routes.joinRoomRoute
 import io.lb.session.DrawingServer
@@ -59,6 +60,7 @@ fun Application.module() {
         createRoomRoute()
         getRoomsRoute()
         joinRoomRoute()
+        gameWebSocketRoute()
     }
 
     install(ContentNegotiation) {
