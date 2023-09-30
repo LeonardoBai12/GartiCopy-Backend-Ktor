@@ -5,11 +5,13 @@ import io.ktor.server.application.call
 import io.ktor.server.request.receiveNullable
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.lb.data.Room
 import io.lb.data.models.BasicApiResponse
 import io.lb.data.models.CreateRoomRequest
+import io.lb.data.models.RoomResponse
 import io.lb.server
 import io.lb.util.Constants
 
@@ -64,6 +66,29 @@ fun Route.createRoomRoute() {
                 HttpStatusCode.OK,
                 BasicApiResponse(true)
             )
+        }
+    }
+}
+
+fun Route.getRooms() {
+    route(Constants.GET_ROOMS_ROUTE) {
+        get {
+            val searchQuery = call.parameters[Constants.PARAMETER_SEARCH_QUERY]
+
+            searchQuery ?: run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+
+            val roomResult = server.rooms.filterKeys {
+                it.contains(searchQuery, ignoreCase = true)
+            }
+
+            val roomResponse = roomResult.values.map {
+                RoomResponse(it.name, it.maxPlayers, it.players.size)
+            }.sortedBy { it.name }
+
+            call.respond(HttpStatusCode.OK, roomResponse)
         }
     }
 }
