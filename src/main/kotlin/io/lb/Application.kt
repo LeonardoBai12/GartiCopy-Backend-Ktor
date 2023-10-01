@@ -24,12 +24,15 @@ import io.lb.routes.getRoomsRoute
 import io.lb.routes.joinRoomRoute
 import io.lb.session.DrawingServer
 import io.lb.session.DrawingSession
+import kotlinx.coroutines.DelicateCoroutinesApi
 
 private const val SESSION_NAME = "SESSIONS"
 private const val CLIENT_ID = "client_id"
+@DelicateCoroutinesApi
 val server = DrawingServer()
 val gson = Gson()
 
+@DelicateCoroutinesApi
 fun main() {
     embeddedServer(
         factory = Netty,
@@ -39,16 +42,11 @@ fun main() {
     ).start(wait = true)
 }
 
+@DelicateCoroutinesApi
 fun Application.module() {
     install(Sessions) {
         cookie<DrawingSession>(SESSION_NAME)
     }
-    install(ContentNegotiation) {
-        gson {
-
-        }
-    }
-    install(CallLogging)
     install(WebSockets)
 
     intercept(ApplicationCallPipeline.Plugins) {
@@ -69,4 +67,11 @@ fun Application.module() {
         joinRoomRoute()
         gameWebSocketRoute()
     }
+
+    install(ContentNegotiation) {
+        gson {
+
+        }
+    }
+    install(CallLogging)
 }
