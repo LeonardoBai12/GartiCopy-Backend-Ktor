@@ -15,4 +15,6 @@ object Constants {
     const val PARAMETER_ROOM_NAME = "roomName"
 
     const val TYPE = "type"
+
+    const val PING_FREQUENCY = 3000L
 }

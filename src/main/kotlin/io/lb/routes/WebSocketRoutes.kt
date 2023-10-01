@@ -22,6 +22,7 @@ import io.lb.data.models.GameError
 import io.lb.data.models.GameState
 import io.lb.data.models.JoinRoomHandshake
 import io.lb.data.models.PhaseChange
+import io.lb.data.models.Ping
 import io.lb.gson
 import io.lb.server
 import io.lb.session.DrawingSession
@@ -53,6 +54,12 @@ fun Route.gameWebSocketRoute() {
 
                     if (room.containsPlayers(player.userName).not()) {
                         room.addPlayer(player.clientId, player.userName, socket)
+                    } else {
+                        val playerInRoom = room.players.find { it.clientId == clientId }
+                        playerInRoom?.apply {
+                            this.socket = socket
+                            startPinging()
+                        }
                     }
                 }
                 is DrawData -> {
@@ -71,6 +78,9 @@ fun Route.gameWebSocketRoute() {
                     if (room.checkWordsAndNotifyPlayers(payload).not()) {
                         room.broadcast(message)
                     }
+                }
+                is Ping -> {
+                    server.players[clientId]?.receivedPong()
                 }
             }
         }
@@ -107,6 +117,7 @@ fun Route.standardWebSocket(
                         BaseModel.Type.PHASE_CHANGE.name -> PhaseChange::class.java
                         BaseModel.Type.CHOSEN_WORD.name -> ChosenWord::class.java
                         BaseModel.Type.GAME_STATE.name -> GameState::class.java
+                        BaseModel.Type.PING.name -> Ping::class.java
                         else -> BaseModel::class.java
                     }
                     val payload = gson.fromJson(message, type)
