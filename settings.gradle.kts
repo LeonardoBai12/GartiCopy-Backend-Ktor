@@ -1,1 +1,1 @@
-rootProject.name = "io.lb.frozen-ape"
+rootProject.name = "io.lb.garticopy"
