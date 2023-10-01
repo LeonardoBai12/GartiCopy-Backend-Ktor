@@ -158,6 +158,23 @@ class Room(
         return true
     }
 
+    private suspend fun sendWordsToPlayers(player: Player) {
+        val phaseChange = PhaseChange(phase, phase.delay, drawingPlayer?.userName)
+
+        word?.let { currentWord ->
+            drawingPlayer?.let { drawingPlayer ->
+                val gameState = GameState(
+                    drawingPlayer.userName,
+                    if (player.isDrawing || phase == Phase.SHOW_WORD)
+                        currentWord
+                    else currentWord.transformToUnderscores()
+                )
+                player.socket.send(Frame.Text(gson.toJson(gameState)))
+            }
+        }
+        player.socket.send(Frame.Text(gson.toJson(phaseChange)))
+    }
+
     private fun addWinningPlayer(userName: String): Boolean {
         winningPlayers += userName
 
