@@ -17,6 +17,8 @@ import io.lb.data.models.Announcement
 import io.lb.data.models.BaseModel
 import io.lb.data.models.ChatMessage
 import io.lb.data.models.ChosenWord
+import io.lb.data.models.DisconnectRequest
+import io.lb.data.models.DrawAction
 import io.lb.data.models.DrawData
 import io.lb.data.models.GameError
 import io.lb.data.models.GameState
@@ -62,13 +64,21 @@ fun Route.gameWebSocketRoute() {
                         }
                     }
                 }
+                is DrawAction -> {
+                    val room = server.getRoomWithClientId(clientId) ?: return@standardWebSocket
+                    room.broadcastToAllExcept(message, clientId)
+                    room.addSerializedDrawInfo(message)
+                }
                 is DrawData -> {
                     val room = server.rooms[payload.roomName] ?: return@standardWebSocket
 
                     if (room.phase == Room.Phase.GAME_RUNNING) {
                         room.broadcastToAllExcept(message, clientId)
+                        room.addSerializedDrawInfo(message)
                     }
+                    room.lastDrawData = payload
                 }
+
                 is ChosenWord -> {
                     val room = server.rooms[payload.roomName] ?: return@standardWebSocket
                     room.setWordAndSwitchToGameRunning(payload.chosenWord)
@@ -81,6 +91,9 @@ fun Route.gameWebSocketRoute() {
                 }
                 is Ping -> {
                     server.players[clientId]?.receivedPong()
+                }
+                is DisconnectRequest -> {
+
                 }
             }
         }
@@ -118,6 +131,8 @@ fun Route.standardWebSocket(
                         BaseModel.Type.CHOSEN_WORD.name -> ChosenWord::class.java
                         BaseModel.Type.GAME_STATE.name -> GameState::class.java
                         BaseModel.Type.PING.name -> Ping::class.java
+                        BaseModel.Type.DISCONNECT_REQUEST.name -> DisconnectRequest::class.java
+                        BaseModel.Type.DRAW_ACTION.name -> DrawAction::class.java
                         else -> BaseModel::class.java
                     }
                     val payload = gson.fromJson(message, type)

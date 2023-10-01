@@ -13,5 +13,8 @@ abstract class BaseModel(val type: Type) {
         NEW_WORD,
         PLAYERS_LIST,
         PING,
+        DISCONNECT_REQUEST,
+        DRAW_ACTION,
+        ROUND_DRAW_INFO,
     }
 }
