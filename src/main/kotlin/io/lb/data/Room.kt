@@ -2,8 +2,8 @@ package io.lb.data
 
 import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
-import io.ktor.websocket.send
 import io.lb.data.models.Announcement
+import io.lb.data.models.ChatMessage
 import io.lb.data.models.ChosenWord
 import io.lb.data.models.GameState
 import io.lb.data.models.NewWords
@@ -11,6 +11,7 @@ import io.lb.data.models.PhaseChange
 import io.lb.gson
 import io.lb.util.Constants
 import io.lb.util.getRandomWords
+import io.lb.util.matchesWord
 import io.lb.util.transformToUnderscores
 import io.lb.util.words
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -32,6 +33,7 @@ class Room(
     private var word: String? = null
     private var currentWords: List<String>? = null
     private var drawingPlayerIndex = 0
+    private var startTime = 0L
 
     init {
         setPhaseChangedListener { newPhase ->
@@ -92,6 +94,7 @@ class Room(
     private fun timeAndNotify(milliseconds: Long) {
         timerJob?.cancel()
         timerJob = GlobalScope.launch {
+            startTime = System.currentTimeMillis()
             val phaseChange = PhaseChange(
                 phase = phase,
                 timestamp = milliseconds,
@@ -115,6 +118,62 @@ class Room(
                 else -> Phase.WAITING_FOR_PLAYERS
             }
         }
+    }
+
+    suspend fun checkWordsAndNotifyPlayers(message: ChatMessage): Boolean {
+        if (isGuessCorrect(message).not())
+            return false
+
+        val guessingTime = System.currentTimeMillis() - startTime
+        val timePercentageLeft = 1F - guessingTime.toFloat() / Phase.GAME_RUNNING.delay
+        val score = GUESS_SCORE_DEFAULT + GUESS_SCORE_PERCENTAGE_MULTIPLIER * timePercentageLeft
+        val player = players.find { it.userName == message.from }
+
+        player?.let {
+            it.score += score.toInt()
+        }
+
+        drawingPlayer?.let {
+            it.score += GUESS_SCORE_FOR_DRAWING_PLAYERS / players.size
+        }
+
+        val announcement = Announcement(
+            "${message.from} has guessed it!",
+            System.currentTimeMillis(),
+            Announcement.Type.PLAYER_GUESSED_WORD
+        )
+
+        broadcast(gson.toJson(announcement))
+        val isRoundOver = addWinningPlayer(message.from)
+
+        if (isRoundOver) {
+            val roundOverAnnouncement = Announcement(
+                "Everybody guessed it! New round starting...",
+                System.currentTimeMillis(),
+                Announcement.Type.EVERYBODY_GUESSED_IT
+            )
+            broadcast(gson.toJson(roundOverAnnouncement))
+        }
+
+        return true
+    }
+
+    private fun addWinningPlayer(userName: String): Boolean {
+        winningPlayers += userName
+
+        if (winningPlayers.size == players.size - 1) {
+            phase = Phase.NEW_ROUND
+            return true
+        }
+
+        return false
+    }
+
+    private fun isGuessCorrect(guess: ChatMessage): Boolean {
+        return guess.matchesWord(word ?: return false) &&
+                winningPlayers.contains(guess.from).not() &&
+                guess.from != drawingPlayer?.userName &&
+                phase == Phase.GAME_RUNNING
     }
 
     suspend fun broadcast(message: String) {
@@ -250,5 +309,8 @@ class Room(
         const val UPDATE_TIME_FREQUENCY = 1000L
 
         const val PENALTY_NOBODY_GUESSED_IT = 50
+        const val GUESS_SCORE_DEFAULT = 50
+        const val GUESS_SCORE_PERCENTAGE_MULTIPLIER = 50
+        const val GUESS_SCORE_FOR_DRAWING_PLAYERS = 50
     }
 }
