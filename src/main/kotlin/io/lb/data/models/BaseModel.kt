@@ -8,6 +8,8 @@ abstract class BaseModel(val type: Type) {
         JOIN_ROOM_HANDSHAKE,
         GAME_ERROR,
         PHASE_CHANGE,
-        CHOSEN_WORD
+        CHOSEN_WORD,
+        GAME_STATE,
+        NEW_WORD,
     }
 }

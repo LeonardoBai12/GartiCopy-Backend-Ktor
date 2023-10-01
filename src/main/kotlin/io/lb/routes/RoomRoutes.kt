@@ -14,7 +14,9 @@ import io.lb.data.models.CreateRoomRequest
 import io.lb.data.models.RoomResponse
 import io.lb.server
 import io.lb.util.Constants
+import kotlinx.coroutines.DelicateCoroutinesApi
 
+@DelicateCoroutinesApi
 fun Route.createRoomRoute() {
     route(Constants.ROUTE_CREATE_ROOM) {
         post {
@@ -70,6 +72,7 @@ fun Route.createRoomRoute() {
     }
 }
 
+@DelicateCoroutinesApi
 fun Route.getRoomsRoute() {
     route(Constants.ROUTE_GET_ROOMS) {
         get {
@@ -93,6 +96,7 @@ fun Route.getRoomsRoute() {
     }
 }
 
+@DelicateCoroutinesApi
 fun Route.joinRoomRoute() {
     route(Constants.ROUTE_JOIN_ROOM) {
         get {

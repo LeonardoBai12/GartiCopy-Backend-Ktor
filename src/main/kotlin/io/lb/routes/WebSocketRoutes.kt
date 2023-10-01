@@ -19,6 +19,7 @@ import io.lb.data.models.ChatMessage
 import io.lb.data.models.ChosenWord
 import io.lb.data.models.DrawData
 import io.lb.data.models.GameError
+import io.lb.data.models.GameState
 import io.lb.data.models.JoinRoomHandshake
 import io.lb.data.models.PhaseChange
 import io.lb.gson
@@ -101,6 +102,7 @@ fun Route.standardWebSocket(
                         BaseModel.Type.JOIN_ROOM_HANDSHAKE.name -> JoinRoomHandshake::class.java
                         BaseModel.Type.PHASE_CHANGE.name -> PhaseChange::class.java
                         BaseModel.Type.CHOSEN_WORD.name -> ChosenWord::class.java
+                        BaseModel.Type.GAME_STATE.name -> GameState::class.java
                         else -> BaseModel::class.java
                     }
                     val payload = gson.fromJson(message, type)

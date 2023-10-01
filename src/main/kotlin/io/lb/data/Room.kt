@@ -2,11 +2,17 @@ package io.lb.data
 
 import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
+import io.ktor.websocket.send
 import io.lb.data.models.Announcement
 import io.lb.data.models.ChosenWord
+import io.lb.data.models.GameState
+import io.lb.data.models.NewWords
 import io.lb.data.models.PhaseChange
 import io.lb.gson
 import io.lb.util.Constants
+import io.lb.util.getRandomWords
+import io.lb.util.transformToUnderscores
+import io.lb.util.words
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -24,6 +30,8 @@ class Room(
     private var drawingPlayer: Player? = null
     private var winningPlayers = listOf<String>()
     private var word: String? = null
+    private var currentWords: List<String>? = null
+    private var drawingPlayerIndex = 0
 
     init {
         setPhaseChangedListener { newPhase ->
@@ -151,11 +159,62 @@ class Room(
     }
 
     private fun newRound() {
+        currentWords = getRandomWords(3)
 
+        val newWords = NewWords(currentWords ?: emptyList())
+        nextDrawingPlayer()
+
+        GlobalScope.launch {
+            drawingPlayer?.socket?.send(Frame.Text(gson.toJson(newWords)))
+            timeAndNotify(Phase.NEW_ROUND.delay)
+        }
+    }
+
+    private fun nextDrawingPlayer() {
+        drawingPlayer?.isDrawing = false
+
+        if (players.isEmpty())
+            return
+
+        drawingPlayer = if (drawingPlayerIndex < players.size) {
+            players[drawingPlayerIndex]
+        } else players.last()
+
+        if (drawingPlayerIndex < players.size - 1)
+            drawingPlayerIndex++
+        else drawingPlayerIndex = 0
     }
 
     private fun gameRunning() {
+        winningPlayers = listOf()
 
+        val wordToSend = word ?: currentWords?.random() ?: words.random()
+        val wordWithUnderscores = wordToSend.transformToUnderscores()
+        val drawingUsername = (drawingPlayer ?: players.random()).userName
+        val gameStateForDrawingPlayer = GameState(
+            drawingUsername,
+            wordToSend
+        )
+        val gameStateForGuessingPlayers = GameState(
+            drawingUsername,
+            wordWithUnderscores
+        )
+        GlobalScope.launch {
+            broadcastToAllExcept(
+                gson.toJson(gameStateForGuessingPlayers),
+                drawingPlayer?.clientId ?: players.random().clientId
+            )
+            drawingPlayer?.socket?.send(
+                Frame.Text(
+                    gson.toJson(gameStateForDrawingPlayer)
+                )
+            )
+
+            timeAndNotify(Phase.GAME_RUNNING.delay)
+
+            println("Drawing phase in room $name started. It'll last " +
+                    "${Phase.GAME_RUNNING.delay / 1000}s")
+        }
     }
 
     private fun showWord() {
