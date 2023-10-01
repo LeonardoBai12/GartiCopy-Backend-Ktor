@@ -77,6 +77,7 @@ fun Route.gameWebSocketRoute() {
     }
 }
 
+@DelicateCoroutinesApi
 fun Route.standardWebSocket(
     handleFrame: suspend (
         socket: DefaultWebSocketSession,
@@ -116,6 +117,13 @@ fun Route.standardWebSocket(
             e.printStackTrace()
         } finally {
             // Handle disconnects.
+            server.getRoomWithClientId(
+                session.clientId
+            )?.players?.find {
+                it.clientId == session.clientId
+            }?.let {
+                server.playerLeft(session.clientId)
+            }
         }
     }
 }

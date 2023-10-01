@@ -8,12 +8,16 @@ import io.lb.data.models.ChosenWord
 import io.lb.data.models.GameState
 import io.lb.data.models.NewWords
 import io.lb.data.models.PhaseChange
+import io.lb.data.models.PlayerData
+import io.lb.data.models.PlayersList
 import io.lb.gson
+import io.lb.server
 import io.lb.util.Constants
 import io.lb.util.getRandomWords
 import io.lb.util.matchesWord
 import io.lb.util.transformToUnderscores
 import io.lb.util.words
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -34,6 +38,9 @@ class Room(
     private var currentWords: List<String>? = null
     private var drawingPlayerIndex = 0
     private var startTime = 0L
+
+    private val playerRemoveJobs = ConcurrentHashMap<String, Job>()
+    private val leftPlayers = ConcurrentHashMap<String, Pair<Player, Int>>()
 
     init {
         setPhaseChangedListener { newPhase ->
@@ -86,9 +93,51 @@ class Room(
             announcementType = Announcement.Type.PLAYER_JOINED
         )
 
+        sendWordsToPlayers(player)
+        broadcastPlayersState()
         broadcast(gson.toJson(announcement))
 
         return player
+    }
+
+    fun removePlayer(clientId: String) {
+        val player = players.find { it.clientId == clientId } ?: return
+        val index = players.indexOf(player)
+        leftPlayers[clientId] = player to index
+        players -= player
+
+        playerRemoveJobs[clientId] = GlobalScope.launch {
+            delay(PLAYER_REMOVE_TIME)
+            val playerToRemove = leftPlayers[clientId]
+            leftPlayers.remove(clientId)
+            playerToRemove?.let {
+                players -= it.first
+            }
+            playerRemoveJobs.remove(clientId)
+        }
+
+        val announcement = Announcement(
+            "${player.userName} left the party :(",
+            System.currentTimeMillis(),
+            Announcement.Type.PLAYER_LEFT
+        )
+
+        GlobalScope.launch {
+            broadcastPlayersState()
+            broadcast(gson.toJson(announcement))
+            if(players.size == 1) {
+                phase = Phase.WAITING_FOR_PLAYERS
+                timerJob?.cancel()
+            } else if(players.isEmpty()) {
+                kill()
+                server.rooms.remove(name)
+            }
+        }
+    }
+
+    private fun kill() {
+        playerRemoveJobs.values.forEach { it.cancel() }
+        timerJob?.cancel()
     }
 
     private fun timeAndNotify(milliseconds: Long) {
@@ -137,6 +186,8 @@ class Room(
             it.score += GUESS_SCORE_FOR_DRAWING_PLAYERS / players.size
         }
 
+        broadcastPlayersState()
+
         val announcement = Announcement(
             "${message.from} has guessed it!",
             System.currentTimeMillis(),
@@ -156,6 +207,21 @@ class Room(
         }
 
         return true
+    }
+
+    /**
+     * Broadcasts the updated rank and scores - it needs to be called everytime the score has changed.
+     */
+    private suspend fun broadcastPlayersState() {
+        val playersList = players.sortedByDescending { it.score }.map {
+            PlayerData(it.userName, it.isDrawing, it.score, it.rank)
+        }
+
+        playersList.forEachIndexed { index, playerData ->
+            playerData.rank = index + 1
+        }
+
+        broadcast(gson.toJson(PlayersList(playersList)))
     }
 
     private suspend fun sendWordsToPlayers(player: Player) {
@@ -241,6 +307,7 @@ class Room(
         nextDrawingPlayer()
 
         GlobalScope.launch {
+            broadcastPlayersState()
             drawingPlayer?.socket?.send(Frame.Text(gson.toJson(newWords)))
             timeAndNotify(Phase.NEW_ROUND.delay)
         }
@@ -300,6 +367,9 @@ class Room(
                     it.score -= PENALTY_NOBODY_GUESSED_IT
                 }
             }
+
+            broadcastPlayersState()
+
             word?.let {
                 val chosenWord = ChosenWord(it, name)
                 broadcast(gson.toJson(chosenWord))
@@ -324,6 +394,8 @@ class Room(
 
     companion object {
         const val UPDATE_TIME_FREQUENCY = 1000L
+
+        const val PLAYER_REMOVE_TIME = 60000L
 
         const val PENALTY_NOBODY_GUESSED_IT = 50
         const val GUESS_SCORE_DEFAULT = 50

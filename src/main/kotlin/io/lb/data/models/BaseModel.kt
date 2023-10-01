@@ -11,5 +11,6 @@ abstract class BaseModel(val type: Type) {
         CHOSEN_WORD,
         GAME_STATE,
         NEW_WORD,
+        PLAYERS_LIST,
     }
 }
