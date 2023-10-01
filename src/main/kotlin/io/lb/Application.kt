@@ -70,7 +70,6 @@ fun Application.module() {
 
     install(ContentNegotiation) {
         gson {
-
         }
     }
     install(CallLogging)

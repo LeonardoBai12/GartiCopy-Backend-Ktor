@@ -59,7 +59,7 @@ class Room(
         }
     }
 
-    private var phaseChangedListener: ((Phase) -> Unit)? =null
+    private var phaseChangedListener: ((Phase) -> Unit)? = null
     var phase = Phase.WAITING_FOR_PLAYERS
         set(value) {
             synchronized(field) {
@@ -176,10 +176,10 @@ class Room(
         GlobalScope.launch {
             broadcastPlayersState()
             broadcast(gson.toJson(announcement))
-            if(players.size == 1) {
+            if (players.size == 1) {
                 phase = Phase.WAITING_FOR_PLAYERS
                 timerJob?.cancel()
-            } else if(players.isEmpty()) {
+            } else if (players.isEmpty()) {
                 kill()
                 server.rooms.remove(name)
             }
@@ -210,7 +210,7 @@ class Room(
                 delay(UPDATE_TIME_FREQUENCY)
             }
 
-            phase = when(phase) {
+            phase = when (phase) {
                 Phase.WAITING_FOR_PLAYERS -> Phase.NEW_ROUND
                 Phase.WAITING_FOR_START -> Phase.SHOW_WORD
                 Phase.NEW_ROUND -> {
@@ -311,9 +311,9 @@ class Room(
 
     private fun isGuessCorrect(guess: ChatMessage): Boolean {
         return guess.matchesWord(word ?: return false) &&
-                winningPlayers.contains(guess.from).not() &&
-                guess.from != drawingPlayer?.userName &&
-                phase == Phase.GAME_RUNNING
+            winningPlayers.contains(guess.from).not() &&
+            guess.from != drawingPlayer?.userName &&
+            phase == Phase.GAME_RUNNING
     }
 
     suspend fun broadcast(message: String) {
@@ -413,8 +413,10 @@ class Room(
 
             timeAndNotify(Phase.GAME_RUNNING.delay)
 
-            println("Drawing phase in room $name started. It'll last " +
-                    "${Phase.GAME_RUNNING.delay / 1000}s")
+            println(
+                "Drawing phase in room $name started. It'll last " +
+                    "${Phase.GAME_RUNNING.delay / 1000}s"
+            )
         }
     }
 

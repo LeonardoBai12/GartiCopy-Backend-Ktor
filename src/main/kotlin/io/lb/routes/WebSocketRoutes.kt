@@ -93,7 +93,6 @@ fun Route.gameWebSocketRoute() {
                     server.players[clientId]?.receivedPong()
                 }
                 is DisconnectRequest -> {
-
                 }
             }
         }
