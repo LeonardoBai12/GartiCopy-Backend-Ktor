@@ -74,8 +74,32 @@ class Room(
         userName: String,
         socket: WebSocketSession
     ): Player {
-        val player = Player(userName, socket, clientId)
-        players += player
+        var indexToAdd = players.lastIndex
+        val player = if (leftPlayers.containsKey(clientId)) {
+            val leftPlayer = leftPlayers[clientId]
+            leftPlayer?.first?.let {
+                it.socket = socket
+                it.isDrawing = drawingPlayer?.clientId == clientId
+                indexToAdd = leftPlayer.second
+
+                playerRemoveJobs[clientId]?.cancel()
+                playerRemoveJobs.remove(clientId)
+                leftPlayers.remove(clientId)
+                it
+            } ?: Player(userName, socket, clientId)
+        } else {
+            Player(userName, socket, clientId)
+        }
+
+        indexToAdd = when {
+            players.isEmpty() -> 0
+            indexToAdd >= players.size -> players.lastIndex
+            else -> indexToAdd
+        }
+
+        val temporaryPlayers = players.toMutableList()
+        temporaryPlayers.add(indexToAdd, player)
+        players = temporaryPlayers.toList()
 
         if (players.size == 1) {
             phase = Phase.WAITING_FOR_PLAYERS
@@ -244,7 +268,7 @@ class Room(
     private fun addWinningPlayer(userName: String): Boolean {
         winningPlayers += userName
 
-        if (winningPlayers.size == players.size - 1) {
+        if (winningPlayers.size == players.lastIndex) {
             phase = Phase.NEW_ROUND
             return true
         }
@@ -323,7 +347,7 @@ class Room(
             players[drawingPlayerIndex]
         } else players.last()
 
-        if (drawingPlayerIndex < players.size - 1)
+        if (drawingPlayerIndex < players.lastIndex)
             drawingPlayerIndex++
         else drawingPlayerIndex = 0
     }
